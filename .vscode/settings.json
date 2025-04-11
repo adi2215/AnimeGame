@@ -51,5 +51,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "3DAnimation.sln"
+    "dotnet.defaultSolution": "AnimeGame.sln"
 }

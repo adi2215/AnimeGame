@@ -1,6 +1,9 @@
-﻿ using UnityEngine;
+﻿using System.Collections;
+using Cinemachine;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 #endif
 
 /* Note: animations are called via the controller for both the character and capsule using animator null checks
@@ -80,6 +83,8 @@ namespace StarterAssets
         private float _cinemachineTargetYaw;
         private float _cinemachineTargetPitch;
 
+        private Alteruna.Avatar _avatar;
+
         // player
         private float _speed;
         private float _animationBlend;
@@ -111,6 +116,11 @@ namespace StarterAssets
         private const float _threshold = 0.01f;
 
         private bool _hasAnimator;
+        public CinemachineVirtualCamera virtualCamera;
+
+        public GameObject[] cameraVirtual;
+
+        private bool cameraSwitch = false;
 
         private bool IsCurrentDeviceMouse
         {
@@ -124,6 +134,8 @@ namespace StarterAssets
             }
         }
 
+        private Camera cam;
+
 
         private void Awake()
         {
@@ -132,10 +144,15 @@ namespace StarterAssets
             {
                 _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
             }
+
+            //cam = virtualCamera.gameObject.GetComponent<Camera>();
         }
 
         private void Start()
         {
+            _avatar = GetComponent<Alteruna.Avatar>();
+
+
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
             
             _hasAnimator = TryGetComponent(out _animator);
@@ -156,6 +173,7 @@ namespace StarterAssets
 
         private void Update()
         {
+
             _hasAnimator = TryGetComponent(out _animator);
 
             JumpAndGravity();
@@ -165,7 +183,21 @@ namespace StarterAssets
 
         private void LateUpdate()
         {
-            CameraRotation();
+
+            if (Input.GetMouseButtonDown(2) && !cameraSwitch)
+            {
+                cameraVirtual[0].SetActive(false);
+                cameraVirtual[1].SetActive(true);
+
+                cameraSwitch = true;
+            }
+            else if (Input.GetMouseButtonDown(2) && cameraSwitch)
+            {
+                cameraVirtual[0].SetActive(true);
+                cameraVirtual[1].SetActive(false);
+
+                cameraSwitch = false;
+            }
         }
 
         private void AssignAnimationIDs()
@@ -192,7 +224,7 @@ namespace StarterAssets
             }
         }
 
-        private void CameraRotation()
+        /*private void CameraRotation()
         {
             // if there is an input and camera position is not fixed
             if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)
@@ -200,8 +232,8 @@ namespace StarterAssets
                 //Don't multiply mouse input by Time.deltaTime;
                 float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
 
-                _cinemachineTargetYaw += _input.look.x * deltaTimeMultiplier * Sensitivity;
-                _cinemachineTargetPitch += _input.look.y * deltaTimeMultiplier * Sensitivity;
+                _cinemachineTargetYaw = Mathf.Lerp(_cinemachineTargetYaw, _cinemachineTargetYaw + _input.look.x * Sensitivity, Time.deltaTime * 10f);
+                _cinemachineTargetPitch = Mathf.Lerp(_cinemachineTargetPitch, _cinemachineTargetPitch + _input.look.y * Sensitivity, Time.deltaTime * 10f);
             }
 
             // clamp our rotations so our values are limited 360 degrees
@@ -211,13 +243,21 @@ namespace StarterAssets
             // Cinemachine will follow this target
             CinemachineCameraTarget.transform.rotation = Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride,
                 _cinemachineTargetYaw, 0.0f);
-        }
+        }*/
 
         private void Move()
         {
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
+            if (_input.sprint)
+            {
+                virtualCamera.m_Lens.NearClipPlane = 1.2f; 
+            }
+            else
+            {
+                StartCoroutine(ChangeNearClipPlaneWithDelay(0.134f));
+            }
             // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
             // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
@@ -255,24 +295,17 @@ namespace StarterAssets
 
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
-            if (_input.move != Vector2.zero)
-            {
-                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
-                                  _mainCamera.transform.eulerAngles.y;
-                float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
-                    RotationSmoothTime);
-
-                // rotate to face input direction relative to camera position
-                if (_rotateOnMove)
-                    transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
-            }
-
-
-            Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
+            
+            inputDirection = _mainCamera.transform.forward * inputDirection.z + _mainCamera.transform.right * inputDirection.x;
+            inputDirection.y = 0f;
 
             // move the player
-            _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
+            _controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) +
                              new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+
+            float targetRotation = _mainCamera.transform.eulerAngles.y;
+    
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0, targetRotation, 0), Time.deltaTime * 10f);
 
             // update animator if using character
             if (_hasAnimator)
@@ -280,6 +313,12 @@ namespace StarterAssets
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
             }
+        }
+
+        private IEnumerator ChangeNearClipPlaneWithDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            virtualCamera.m_Lens.NearClipPlane = 0.8f;
         }
 
         private void JumpAndGravity()
