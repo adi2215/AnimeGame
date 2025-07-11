@@ -1,4 +1,5 @@
 using System.Threading;
+using StarterAssets;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,7 +24,11 @@ public class FirstPersonInteraction : MonoBehaviour
 
     public GameObject bulletPrefab;
     public Transform firePoint;      
-    public float bulletForce = 20f;  
+    public float bulletForce = 20f;
+
+    public GameObject objff;
+
+    public StarterAssetsInputs lockCursor;
 
     private void Start()
     {
@@ -66,12 +71,13 @@ public class FirstPersonInteraction : MonoBehaviour
                     }
                     else if (obj == "AINPC")
                     {
-                        countPoints += 10;
+                        countPoints += 0;
                         Debug.Log("TakeIt");
                     }
-                    else if (obj == "NPCGUN")
+                    else if (obj == "Broom")
                     {
-                        countPoints += 10;
+                        countPoints += 25;
+
                         Debug.Log("TakeIt");
                     }
                 }
@@ -92,7 +98,13 @@ public class FirstPersonInteraction : MonoBehaviour
             pop.NextTask();
         }
 
-        textPoints.text = "Points: " + countPoints.ToString();
+        if (countPoints == 100)
+        {
+            objff.SetActive(true);
+            lockCursor.cursorLocked = false;
+        }
+
+        textPoints.text = "Stardust: " + countPoints.ToString();
     }
 
     void Shoot(GameObject npcEnemy)

@@ -15,12 +15,16 @@ public class AI_Agent : MonoBehaviour, IInteractable
     public float walkSpeed = 3.5f;
     public float idleTime = 3f;
     public float escapeDistance = 100f;
-    public float calmDownTime = 40f;
+    public float calmDownTime = 1f;
 
     private NavMeshAgent navAgent;
     private Animator animator;
     private NPCState currentState;
     private GameObject player;
+
+    public GameObject RootObject;
+
+    public bool checking = true;
 
     private void Start()
     {
@@ -56,7 +60,7 @@ public class AI_Agent : MonoBehaviour, IInteractable
 
     public void StopNPC()
     {
-        navAgent.isStopped = true; 
+        navAgent.isStopped = true;
         navAgent.ResetPath();
     }
 
@@ -75,11 +79,6 @@ public class AI_Agent : MonoBehaviour, IInteractable
         {
             yield return null; // Ждём следующий кадр
         }
-
-        if (navAgent != null)
-        {
-            Destroy(gameObject); // Удаляем NPC
-        }
     }
 
     private void UpdateAnimations()
@@ -87,6 +86,12 @@ public class AI_Agent : MonoBehaviour, IInteractable
         float targetSpeed = (currentState == NPCState.Fleeing) ? fleeSpeed : 0f;
         animator.SetFloat(Animator.StringToHash("Speed"), Mathf.Lerp(animator.GetFloat("Speed"), targetSpeed, Time.deltaTime * 5f));
         animator.SetFloat(Animator.StringToHash("MotionSpeed"), 1f);
+
+        if (navAgent != null && Vector3.Distance(transform.position, originalPoint.position) < 0.1f && checking)
+        {
+            checking = false;
+            StartCoroutine(CalmDown());
+        }
     }
 
     IEnumerator CalmDown()

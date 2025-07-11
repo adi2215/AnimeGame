@@ -3439,7 +3439,7 @@ GameObject:
   - component: {fileID: 2250933936838878345}
   - component: {fileID: 8512536333255633808}
   - component: {fileID: 8485458691840892912}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Killer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3897,11 +3897,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   originalPoint: {fileID: 0}
-  fleeSpeed: 8
-  walkSpeed: 3.5
-  idleTime: 3
+  fleeSpeed: 3
+  walkSpeed: 3
+  idleTime: 1
   escapeDistance: 100
-  calmDownTime: 40
+  calmDownTime: 5
+  RootObject: {fileID: 8704022829444977040}
+  checking: 1
 --- !u!195 &8485458691840892912
 NavMeshAgent:
   m_ObjectHideFlags: 0

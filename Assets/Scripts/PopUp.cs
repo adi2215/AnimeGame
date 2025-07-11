@@ -9,16 +9,25 @@ public class PopUp : MonoBehaviour
     public Animator animator;
     private bool isVisible = false;
     public int currentTask = -1;
+
+    public GameObject obj;
     private string[] tasks = {
-        "1. Попросите посторонних покинуть местность",
-        "2. Оцепите территорию",
-        "3. Освободите заложников",
-        "4. Обезвредить преступников"
+        "1. Для передвижения WASD",
+        "2. Взаимодействие с Персонажем и Обьектами на кнопку Е",
+        "3. NPC : Соберите Метла"
     };
     void Start()
     {
         currentTask = -1;
         //gameObject.SetActive(false);
+
+        StartCoroutine(ShowMessaged());
+    }
+
+    public IEnumerator ShowMessaged()
+    {
+        yield return new WaitForSeconds(1f);
+        NextTask();
     }
 
     public void ShowMessage(string s)
@@ -39,6 +48,8 @@ public class PopUp : MonoBehaviour
         TogglePopup();
         yield return new WaitForSeconds(4f);
         TogglePopup();
+        yield return new WaitForSeconds(2f);
+        NextTask();
     }
 
     public void TogglePopup()
